@@ -47,7 +47,7 @@ defaultRestoreM = restoreT . restoreM . unComposeSt
 $(let f :: Int -> Name -> Q Dec
       f n name =
           [InstanceD Nothing [] (ConT ''MonadBaseControl `AppT` t)
-           [TySynInstD ''StM $ TySynEqn [t, VarT u] (VarT u),
+           [TySynInstD $ TySynEqn Nothing (foldl' AppT (ConT ''StM) [t, VarT u]) (VarT u),
             FunD 'liftBaseWith [Clause [VarP v] (NormalB (VarE v `AppE` VarE 'id)) []],
             ValD (VarP 'restoreM) (NormalB (VarE 'pure)) []]
             | t <- foldl' AppT (ConT name) <$> replicateM n (VarT <$> newName "a")
@@ -71,7 +71,7 @@ instance MonadBaseControl ((->) a) where
 $(let f :: Int -> Name -> Q Dec
       f n name = 
           [InstanceD Nothing [ConT ''MonadBaseControl `AppT` f] (ConT ''MonadBaseControl `AppT` AppT t f)
-           [TySynInstD ''StM $ TySynEqn [AppT t f, a] (foldl' AppT (ConT ''ComposeSt) [t, f, a]),
+           [TySynInstD $ TySynEqn Nothing (foldl' AppT (ConT ''StM) [AppT t f, a]) (foldl' AppT (ConT ''ComposeSt) [t, f, a]),
             ValD (VarP 'liftBaseWith) (NormalB (VarE 'defaultLiftBaseWith)) [],
             ValD (VarP 'restoreM) (NormalB (VarE 'defaultRestoreM)) []]
             | t <- foldl' AppT (ConT name) <$> replicateM n (VarT <$> newName "a")
